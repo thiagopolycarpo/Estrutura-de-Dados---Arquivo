@@ -8,7 +8,7 @@
 #include <string.h>
 
 struct livro {
-    char isbn[14];
+    char isbn[13];
     char titulo[50];
     char autor[50];
     char ano[5];
@@ -18,15 +18,18 @@ struct livro {
 int abrir_arquivo(FILE **p_arq, char *nome_arq);
 void criar_arquivo(FILE **p_arq, char *nome_arq);
 void fechar_arquivo(FILE **p_arq);
+void menu();
 char pega_registro(FILE *p_arq, char *p_reg);
 
 int main()
 {
 	FILE *arq;
-	char *pch, registro[119], tam_reg;
+	char *pch, registro[119], tam_reg, cadastro[]="biblioteca.bin";
  	int aberto;
   
-	aberto = abrir_arquivo(&arq, "biblioteca.bin");
+  menu();
+  //abrir arquivo, criar, exibir e fechar
+	/*aberto = abrir_arquivo(&arq, cadastro);
 	
 	while(fread(&lr, sizeof(livro), 1, arq)){
 		printf("\n%s", lr.isbn);
@@ -37,7 +40,7 @@ int main()
 	
 	//if(!aberto) criar_arquivo(arq, "Biblioteca.");
 	
- 	fechar_arquivo(&arq);
+ 	fechar_arquivo(&arq);*/
   return 0;
 }
 
@@ -66,6 +69,38 @@ void criar_arquivo(FILE **p_arq, char nome_arq[])
 void fechar_arquivo(FILE **p_arq)
 {
   fclose(*p_arq);
+}
+
+void menu()
+{
+  int resp;
+  do
+  {
+    system("clear");
+    printf("\n        Menu");
+    printf("\n1 - Insercao");
+    printf("\n2 - Remocao");
+    printf("\n3 - Compactacao");
+    printf("\n4 - Carregar Arquivos");
+    printf("\n5 - Dump Arquivo: ");
+    scanf("%d",&resp);
+
+    if(resp < 1 || resp > 5)
+    {
+      printf("\n Opção inválida, digite novamente! (Aperte enter)");
+      getchar();
+    }
+  }while(resp < 1 || resp > 5);
+
+  switch(resp)
+  {
+    case 1: break;
+    case 2: break;
+    case 3: break;
+    case 4: break;
+    case 5: break;
+    default: printf("\nOpção inválida!");
+  }
 }
 
 //devolve o tamanho dos registros
