@@ -11,13 +11,11 @@
 #define TAM_STRUCT 5
 
 //structs
-struct livro 
-{
-    //int  usado=0; // 0 para não usado, 1 para usado
-    char isbn[14];
-    char titulo[50];
-    char autor[50];
-    char ano[5];
+struct livro {
+  char isbn[14];
+  char titulo[50];
+  char autor[50];
+  char ano[5];
 }lr[TAM_STRUCT];
 
 
@@ -26,18 +24,17 @@ int abrir_arquivo(FILE **p_arq, char *nome_arq);
 void criar_arquivo(FILE **p_arq, char *nome_arq);
 void fechar_arquivo(FILE **p_arq);
 int carrega_arquivo();
-int pega_registro(FILE *p_arq, char *p_reg);
-int inserir(int qtd_livros, FILE **out);
-int dump_arquivo(FILE *arq);
+int pega_registro(FILE **p_arq, char *p_reg);
+int inserir(FILE **arq);
+int dump_arquivo(FILE **arq);
 
-int main()
-{
-  	int resp, sair = 0, qtd_livros;
-	FILE *out;
+int main(){
+  int resp, sair = 0;
+	FILE *arq;
 	do
-  	{ 
-	  //system("clear");
-	  system("cls");
+  { 
+	  system("clear");
+	  //system("cls");
 	    
 	  printf("\n        Menu");
 	  printf("\n1 - Insercao");
@@ -53,19 +50,19 @@ int main()
     	{
 			case 1:
       		{
-		    inserir(qtd_livros, &out);
+		    inserir(&arq);
 				break;
 			}
 		  case 2: break;
 		  case 3: break;
 		  case 4: 
     	  	{
-		    qtd_livros = carrega_arquivo(); //retorna a quantidade de livros carregados 
+		    carrega_arquivo(); 
 				break;
 			}
 		  case 5:
     	  	{
-		    dump_arquivo(out);
+		    dump_arquivo(&arq);
 				break;
 			}
 		    case 6:
@@ -90,18 +87,22 @@ int abrir_arquivo(FILE **p_arq, char nome_arq[])
     printf("\nimpossivel abrir o arquivo");
     return 0;
   }
-  
   return 1;
 } 
 
-//cria arquivos
+//cria arquivo livros.bin e adiciona o byte int do contador e o byte offset
 void criar_arquivo(FILE **p_arq, char nome_arq[])
 {
+  int offset=-1,cont=0;
   if((*p_arq = fopen(nome_arq,"a+b")) == NULL)
   {
     printf("impossivel criar o arquivo");
+    //system("pause");
     exit(0);
   }
+  //reserva os 4 primeiros bytes para o contador e os outros 4 para o offset
+  fwrite(&cont,sizeof(int),1,*p_arq);
+  fwrite(&offset,sizeof(int),1,*p_arq);
 }
 
 //fecha arquivos
@@ -115,11 +116,11 @@ void fechar_arquivo(FILE **p_arq)
 int carrega_arquivo(){
   char arq_cadastro[]="biblioteca.bin", arq_remove[]="remove.bin";
   FILE *arq;
-  int i, aberto,resp, qtd_livros = 0;
+  int i, aberto,resp;
 
   do{
-    //system("clear");
-    system("cls");
+    system("clear");
+    //system("cls");
     
     printf("\nDigite 1- biblioteca.bin e 2-remove.bin: ");
     scanf("%d", &resp);
@@ -132,9 +133,11 @@ int carrega_arquivo(){
     if(aberto){
       i=0;
       while(fread(&lr[i], sizeof(livro), 1, arq)){
-      	qtd_livros++;
-        i++;
+      	i++;
       }
+      printf("\ncarreguei ");//teste
+      fechar_arquivo(&arq);
+      return 1;
     }
   }else{
     //abre arquivo remove, carrega em vetor de struct -- pode usar o mesmo vetor?! 
@@ -142,76 +145,102 @@ int carrega_arquivo(){
     if(aberto){
       i=0;
       while(fread(&lr, sizeof(livro), 1, arq)){
-      	qtd_livros++;
-        i++;
+      	i++;
       }
     }
   }
   fechar_arquivo(&arq);
-  return qtd_livros;  
+  return 1;
 }
 //devolve o tamanho dos registros
-int pega_registro(FILE *p_arq, char *p_reg){
-    int bytes;
+int pega_registro(FILE **p_arq, char *p_reg){
+  int bytes;
      
-    if (!fread(&bytes, sizeof(int), 1, p_arq))
-    	return 0;
-    fread(p_reg, bytes, 1, p_arq);
-   	return bytes;
-} 
+  if (!(fread(&bytes, sizeof(int), 1, *p_arq)))
+    return 0;
+  fread(p_reg, bytes, 1, *p_arq);
+  return bytes;
+}
 
-int inserir(int qtd_livros, FILE **out)
+int inserir(FILE **arq)
 {
-	int i = 0, tam_registro;
-	char registro[119];
+	int i, cont_registro, tam_registro, offset, tam_disponivel, aberto;
+	char registro[119], arq_livros[]="livros.bin";
 	
-	system("cls");
-	//system("clear");
+	//system("cls");
+	system("clear");
 	
-	if((*out = fopen("livros.bin", "a+b")) == NULL){
-		printf("\nNao foi possivel abrir o arquivo\n");
-		system("pause");
-		return 0;	
+  //abre arquivo e se nao conseguir abrir o arquivo porque é a primeira vez, cria o arquivo
+  aberto=abrir_arquivo(arq,arq_livros);
+	if(!aberto){
+		criar_arquivo(arq,arq_livros);
+    printf("\narquivo criado\n");
 	}
 
-	while(i < qtd_livros)
-  	{
-	 	//formatando os registros para a estrategia de tamanho variavel
-	    sprintf(registro,"%s|%s|%s|%s|", lr[i].isbn, lr[i].titulo, lr[i].autor, lr[i].ano);
-	    tam_registro = strlen(registro); //pega o tamanho de cada registro
-	    tam_registro++;
-	    printf("\n%s", registro);
-	    printf("\n%d", tam_registro);
-	        
-	    //gravando tamanho do registro e registro no arquivo livros.bin 
-	    fwrite(&tam_registro, sizeof(int), 1, *out);
-	    fwrite(registro, sizeof(char), tam_registro, *out);
-	   
-	    i++;
-  	}
+  //volta arquivo no inicio le um byte que é o valor da posicao do registo no vetor
+  //e le mais um byte que é o offset do arquivo indicando arquivos deletados ou nao
+  fseek(*arq,0,0);
+  fread(&cont_registro,1,sizeof(int),*arq);
+  fread(&offset,1,sizeof(int),*arq);
+  i=cont_registro;
+  registro[0]='\0';//zera o registro cada vez que volta, nao tenho certeza se eh necessario
+	
+  //formatando os registros para a estrategia de tamanho variavel a partir do i que voltou do arquivo
+	sprintf(registro,"%s|%s|%s|%s|", lr[i].isbn, lr[i].titulo, lr[i].autor, lr[i].ano);
+  tam_registro = strlen(registro); //pega o tamanho de cada registro
+	tam_registro++;
+	printf("\nregistro na funcao inserir  %s", registro);
+	printf("\ntamanho registro na funcao inserir %d", tam_registro);
+  
 
-	fclose(*out);
-    printf("\n\n");
-    system("pause");
-    return 1;
+	 
+  // se offset !=-1 então procura onde colocar o novo registro, se tam_reg == tam_disp entao coloca registro la
+  //acho que nesse dowhile ele ja percorre arquivo, maybe? verificar só mexer quando tiver a remoção pra ver
+  //o que precisa ser feito  
+  /*do{
+    if(offset != -1){
+      fread(&tam_disponivel,1,sizeof(int),*arq);
+      if(tam_registro <= tam_disponivel){
+        //gravando tamanho do registro e registro no arquivo livros.bin
+        fwrite(&i+1,sizeof(int),1,*arq); 
+        fwrite(&tam_registro, sizeof(int), 1, *arq);
+        fwrite(registro, sizeof(char), tam_registro, *arq);
+        fclose(*arq);
+        return 1;
+      }
+    }
+  }while(offset != -1);   */ 
+
+	//gravando tamanho do registro e registro no arquivo livros.bin
+  fseek(*arq,0,2); 
+	fwrite(&tam_registro, sizeof(int), 1, *arq);
+	fwrite(registro,sizeof(char),tam_registro, *arq);
+  i++;
+  printf("i proximo %d",i);
+  fseek(*arq,0,0);
+  fwrite(&i,sizeof(int),1,*arq);//grava no inicio no primeiro byte
+  fclose(*arq);
+  //printf("\n\n");
+  //system("pause");
+  return 1;
 } 
 
-//faz o dump do arquivo passado por parametro.
-int dump_arquivo(FILE *arq)
+//faz o dump do arquivo passado por parametro. arrumar o dump pra ele perceber que tem o cont e o offset
+int dump_arquivo(FILE **arq)
 {
-	char *pch, registro[119], tam_reg;
+	char *pch, registro[119], tam_reg, arq_livros[]="livros.bin";
+	int aberto;
+	//system("cls");
+	system("clear");
 	
-	system("cls");
-	//system("clear");
-	
-	if((arq = fopen("livros.bin","r+b")) == NULL)
-  	{
+  aberto = abrir_arquivo(arq, arq_livros);
+	if(!aberto){
 		printf("\nimpossivel abrir o arquivo\n");
-		system("pause");
+		///system("pause");
 		return 0;
 	}
 
- 	fseek(arq,0,0);
+ 	fseek(*arq,0,0);
   tam_reg = pega_registro(arq,registro);
   while (tam_reg > 0)
   {
@@ -225,8 +254,8 @@ int dump_arquivo(FILE *arq)
 	  tam_reg = pega_registro(arq,registro);  
   } 
   printf("\n");
-  system("pause");
-  fclose(arq);
+  //ystem("pause");
+  fclose(*arq);
   return 1;
 
 }
