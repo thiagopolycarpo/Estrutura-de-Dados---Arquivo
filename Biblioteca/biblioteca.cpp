@@ -10,12 +10,16 @@
 #define TAM_STRUCT 5
 
 //structs
-struct livro {
+struct livro{
   char isbn[14];
   char titulo[50];
   char autor[50];
   char ano[5];
 }lr[TAM_STRUCT];
+
+struct remove{
+  char isbn[14];
+}rem[TAM_STRUCT];
 
 
 //funcoes
@@ -26,6 +30,7 @@ int carrega_arquivo();
 int pega_registro(FILE **p_arq, char *p_reg);
 int inserir(FILE **arq);
 int dump_arquivo(FILE **arq);
+int remover(FILE **arq);
 
 int main(){
   int resp, sair = 0;
@@ -48,7 +53,10 @@ int main(){
 		    inserir(&arq);
 				break;
 			}
-		  case 2: break;
+		  case 2:{
+		  	remover(&arq);
+				break;
+			}
 		  case 3: break;
 		  case 4:{
 		    carrega_arquivo(); 
@@ -107,16 +115,15 @@ int carrega_arquivo(){
   int i, aberto,resp;
 
   do{
-   system("cls");
+   	system("cls");
     
     printf("\nDigite 1- biblioteca.bin e 2-remove.bin: ");
     scanf("%d", &resp);
-  }while(resp < 0 || resp > 1);
+  }while(resp < 1 || resp > 2);
   //se resp == 1 carrega biblioteca.bin, senão remove.bin
-  if(resp){
+  if(resp == 1){
     //abre arquivo biblioteca, carrega em vetor de struct 
     aberto = abrir_arquivo(&arq, arq_cadastro);
-    
     if(aberto){
       i=0;
       while(fread(&lr[i], sizeof(livro), 1, arq)){
@@ -126,16 +133,20 @@ int carrega_arquivo(){
       fechar_arquivo(&arq);
       return 1;
     }
-  }else{
-    //abre arquivo remove, carrega em vetor de struct -- pode usar o mesmo vetor?! 
-    aberto = abrir_arquivo(&arq, arq_remove);
-    if(aberto){
-      i=0;
-      while(fread(&lr, sizeof(livro), 1, arq)){
-      	i++;
-      }
-    }
-  }
+    
+	}else{
+	    //abre arquivo remove, carrega em vetor de struct -- pode usar o mesmo vetor?! 
+	    aberto = abrir_arquivo(&arq, arq_remove);
+	    if(aberto){
+	      i=0;
+	      printf("dados carregados:\n");
+	      while(fread(&rem[i], sizeof(struct remove), 1, arq)){
+	      	printf("%s\n", rem[i].isbn);
+	      	i++;
+	      }
+	    }
+	}
+  system("pause");
   fechar_arquivo(&arq);
   return 1;
 }
@@ -168,7 +179,7 @@ int inserir(FILE **arq){
   //e le mais um byte que é o offset do arquivo indicando arquivos deletados ou nao
   fseek(*arq,0,0);
   fread(&cont_registro,1,sizeof(int),*arq);
-  fread(&ignora,1,sizeof(int),*arq);//ignora cont do arquivo de remoção
+  fread(&ignora,1,sizeof(int),*arq);//ignora cont do arquivo de remocao
   printf("\ncontador: %d", cont_registro);
   fread(&offset,1,sizeof(int),*arq);
   printf("\noffset: %d", offset);
@@ -213,8 +224,8 @@ int dump_arquivo(FILE **arq){
   fread(&cont_remocao, sizeof(int), 1, *arq);
  	fread(&offset, sizeof(int), 1, *arq);
  	
- 	printf("contador inserção: %d\n", cont_insercao);
-  printf("contador remoção: %d\n", cont_remocao);
+ 	printf("contador insercao: %d\n", cont_insercao);
+  printf("contador remocao: %d\n", cont_remocao);
 	printf("offset: %d\n\n", offset); 	
  	
  	
@@ -234,4 +245,60 @@ int dump_arquivo(FILE **arq){
 	fclose(*arq);
 	return 1;
 }
+
+//remove um elemento do arquivo 
+int remover(FILE **arq){
+	char registro[119], nome_arq[]="livros.bin", *pch, marcador = '*';
+	int cont_insercao, cont_remocao, offset, tam_reg, i=0, posicao, posicao_corrente, achou = 0;
+	
+	system("cls");
+	if(!abrir_arquivo(arq, nome_arq)) return 0;
+	
+	fseek(*arq,0,0);
+ 	fread(&cont_insercao, sizeof(int), 1, *arq);
+  fread(&cont_remocao, sizeof(int), 1, *arq);
+ 	fread(&offset, sizeof(int), 1, *arq);
+ 	
+ 	printf("contador insercao: %d\n", cont_insercao);
+  printf("contador remocao: %d\n", cont_remocao);
+	printf("offset: %d\n\n", offset);
+	
+	posicao_corrente = ftell(*arq); 								//pega posicao do primeiro registro
+	tam_reg = pega_registro(arq,registro); 					//pega tamanho do primeiro registro
+	while (tam_reg > 0 && achou == 0){
+		
+    pch = strtok(registro,"|");							//pega o isbn
+    
+    if(!strcmp(pch, rem[cont_remocao].isbn)){			//compara o isbn do registro for igual com isbn passado
+    	printf("posicao do registro a ser removido no arquivo: %d\n", posicao_corrente); //posicao do registro no arquivo
+			printf("Tamanho registro: %d\n", tam_reg);
+			printf("%s\n",pch);
+    	posicao = posicao_corrente;									
+    	achou = 1;																	//achou recebe 1 para sair do while	
+		}
+    
+    posicao_corrente = ftell(*arq); 							//obtem a posicao do proximo registro
+		printf("\n");
+  	tam_reg = pega_registro(arq,registro);
+  }
+  
+  if(achou){
+  	fseek(*arq, posicao + 4, 0);								//aponta para o registro alvo pulando o tamanho dele
+  	fwrite(&marcador, sizeof(char), 1, *arq);		//escreve no registro o marcador * 
+  	fwrite(&offset, sizeof(int), 1, *arq);			//escreve no registro o valor do ultimo espa�o livre na lista 
+  	fseek(*arq, 8, 0);													//aponta para o head da lista e faz ele apontar para esse registro 
+  	fwrite(&posicao, sizeof(int), 1, *arq);
+  	printf("registro removido\n");
+	}else{
+		printf("regstro n�o encontrado\n");
+	}
+	
+	cont_remocao++;																//incrementa o contador de remo��o
+	fseek(*arq, 4, 0);
+	fwrite(&cont_remocao, sizeof(int), 1, *arq);	
+	
+	system("pause");
+	fclose(*arq);
+}
+  
   
