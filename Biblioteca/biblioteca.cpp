@@ -31,7 +31,6 @@ int main(){
   int resp, sair = 0;
 	FILE *arq;
 	do{ 
-	  //system("clear");
 	  system("cls");
 	    
 	  printf("\n        Menu");
@@ -89,8 +88,9 @@ void criar_arquivo(FILE **p_arq, char nome_arq[]){
     exit(0);
   }
   //reserva os 4 primeiros bytes para o contador e os outros 4 para o offset
-  fwrite(&cont,sizeof(int),1,*p_arq);
-  fwrite(&offset,sizeof(int),1,*p_arq);
+  fwrite(&cont,sizeof(int),1,*p_arq);//cont do arquivo de inserção
+  fwrite(&cont,sizeof(int),1,*p_arq);//cont do arquivo de remoção
+  fwrite(&offset,sizeof(int),1,*p_arq);//offset
   fclose(*p_arq);
 }
 
@@ -107,8 +107,7 @@ int carrega_arquivo(){
   int i, aberto,resp;
 
   do{
-    //system("clear");
-    system("cls");
+   system("cls");
     
     printf("\nDigite 1- biblioteca.bin e 2-remove.bin: ");
     scanf("%d", &resp);
@@ -151,11 +150,11 @@ int pega_registro(FILE **p_arq, char *p_reg){
 }
 
 int inserir(FILE **arq){
-	int i, cont_registro, tam_registro, offset, tam_disponivel, aberto;
+	int i, cont_registro, tam_registro, offset, tam_disponivel, aberto,ignora;
 	char registro[119], arq_livros[]="livros.bin";
 	
 	system("cls");
-	//system("clear");
+	
 	
   //abre arquivo e se nao conseguir abrir o arquivo porque é a primeira vez, cria o arquivo
 	if((fopen(arq_livros, "r+b")) == NULL){
@@ -169,6 +168,7 @@ int inserir(FILE **arq){
   //e le mais um byte que é o offset do arquivo indicando arquivos deletados ou nao
   fseek(*arq,0,0);
   fread(&cont_registro,1,sizeof(int),*arq);
+  fread(&ignora,1,sizeof(int),*arq);//ignora cont do arquivo de remoção
   printf("\ncontador: %d", cont_registro);
   fread(&offset,1,sizeof(int),*arq);
   printf("\noffset: %d", offset);
@@ -197,22 +197,24 @@ int inserir(FILE **arq){
 //faz o dump do arquivo passado por parametro.
 int dump_arquivo(FILE **arq){
 	char *pch, registro[119], tam_reg, arq_livros[]="livros.bin";
-	int aberto, cont, offset;
+	int aberto, cont_insercao,cont_remocao, offset;
 	system("cls");
-	//system("clear");
+	
 	
   aberto = abrir_arquivo(arq, arq_livros);
 	if(!aberto){
 		printf("\nimpossivel abrir o arquivo\n");
-		///system("pause");
+		system("pause");
 		return 0;
 	}
 
  	fseek(*arq,0,0);
- 	fread(&cont, sizeof(int), 1, *arq);
+ 	fread(&cont_insercao, sizeof(int), 1, *arq);
+  fread(&cont_remocao, sizeof(int), 1, *arq);
  	fread(&offset, sizeof(int), 1, *arq);
  	
- 	printf("contador: %d\n", cont);
+ 	printf("contador inserção: %d\n", cont_insercao);
+  printf("contador remoção: %d\n", cont_remocao);
 	printf("offset: %d\n\n", offset); 	
  	
  	
