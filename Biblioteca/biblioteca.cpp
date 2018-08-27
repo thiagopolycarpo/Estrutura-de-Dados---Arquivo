@@ -7,7 +7,7 @@
 #include <string.h>
 
 //defines
-#define TAM_STRUCT 5
+#define TAM_STRUCT 10
 
 //structs
 struct livro{
@@ -162,7 +162,7 @@ int pega_registro(FILE **p_arq, char *p_reg){
 
 int inserir(FILE **arq){
 	int i, cont_registro, tam_registro, offset, tam_disponivel, aberto,ignora;
-	char registro[119], arq_livros[]="livros.bin";
+	char registro[119], arq_livros[]="livros.bin", teste;
 	
 	system("cls");
 	
@@ -184,21 +184,69 @@ int inserir(FILE **arq){
   fread(&offset,1,sizeof(int),*arq);
   printf("\noffset: %d", offset);
   i=cont_registro;
-
+  
   //formatando os registros para a estrategia de tamanho variavel a partir do i que voltou do arquivo
-	sprintf(registro,"%s|%s|%s|%s|", lr[i].isbn, lr[i].titulo, lr[i].autor, lr[i].ano);
+  sprintf(registro,"%s|%s|%s|%s|", lr[i].isbn, lr[i].titulo, lr[i].autor, lr[i].ano);
   tam_registro = strlen(registro); //pega o tamanho de cada registro
 	tam_registro++;
 	printf("\nregistro na funcao inserir:  %s", registro);
-	printf("\ntamanho registro na funcao inserir: %d", tam_registro);
+	printf("\ntamanho registro na funcao inserir: %d\n\n", tam_registro);
   
-	//gravando tamanho do registro e registro no arquivo livros.bin
-  fseek(*arq,0,2); 
+  //Inserindo no meio do arquivo se tiver espaço disponivel com tamanho que caiba registro
+	if(offset != -1){
+		int proximo, tam_excluido, aux, achou = 0, anterior;
+		aux = offset;
+		anterior = 3;				//posição do head da lista no arquivo, obs.: o valor é 3 pq 3 + 5 = 8, que é a posição correta
+	
+		//acha se possivel um espaço valido para o registro 
+		while(achou != 1 && proximo != -1){
+			fseek(*arq, aux, 0);
+			fread(&tam_excluido, sizeof(int), 1, *arq);
+			printf("\ntamanho do resgistro excluido: %d", tam_excluido);
+			fseek(*arq, 1, 1);													//pula o marcador *
+			fread(&proximo, sizeof(int), 1, *arq);			//pega a posição do proximo registro na lista
+			printf("\nproximo elemento: %d\n", proximo);
+			
+			if(tam_excluido >= tam_registro){
+				achou = 1;
+				fseek(*arq, anterior + 5, 0); 			//aponta para o "apontador" do registro anterior na lista, se o removido for o primeiro... 
+				fwrite(&proximo, sizeof(int), 1, *arq);																				//...aponta para o head da lista
+			}else{
+				anterior = aux;
+				aux = proximo;
+			}
+			system("pause");
+		}
+		
+		if(achou){			
+			fseek(*arq, aux + 4, 0);   //aponta para o espaço disponivel
+			
+			//fwrite(&tam_registro, sizeof(int), 1, *arq);     //insere o tamanho do registro
+			
+			fwrite(registro,sizeof(char),tam_registro, *arq); //insere o registro
+			
+			printf("\nregistro inserido\n");
+			i++;
+		  fseek(*arq,0,0);							//aponta para o contador
+		  fwrite(&i,sizeof(int),1,*arq);//grava no inicio no primeiro byte
+		  
+		  system("pause");
+		  fclose(*arq);
+		  return 1;
+		}else{
+			printf("\nnao foi possivel achar um tamanho disponivel, inserindo no final do arquivo\n");
+			system("pause");
+		}
+	}
+	
+	fseek(*arq,0,2); 
 	fwrite(&tam_registro, sizeof(int), 1, *arq);
 	fwrite(registro,sizeof(char),tam_registro, *arq);
-  i++;
+	
+	i++;
   fseek(*arq,0,0);							//aponta para o contador
   fwrite(&i,sizeof(int),1,*arq);//grava no inicio no primeiro byte
+
   fclose(*arq);
   printf("\n\n");
   system("pause");
@@ -300,5 +348,3 @@ int remover(FILE **arq){
 	system("pause");
 	fclose(*arq);
 }
-  
-  
