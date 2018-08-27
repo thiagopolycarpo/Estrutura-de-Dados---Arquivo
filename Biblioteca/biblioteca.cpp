@@ -306,18 +306,18 @@ int remover(FILE **arq){
 	
 	fseek(*arq,0,0);
  	fread(&cont_insercao, sizeof(int), 1, *arq);
-  	fread(&cont_remocao, sizeof(int), 1, *arq);
+  fread(&cont_remocao, sizeof(int), 1, *arq);
  	fread(&offset, sizeof(int), 1, *arq);
  	
  	printf("contador insercao: %d\n", cont_insercao);
-  	printf("contador remocao: %d\n", cont_remocao);
+  printf("contador remocao: %d\n", cont_remocao);
 	printf("offset: %d\n\n", offset);
 	
 	posicao_corrente = ftell(*arq); 								//pega posicao do primeiro registro
 	tam_reg = pega_registro(arq,registro); 					//pega tamanho do primeiro registro
 	while (tam_reg > 0 && achou == 0){
 		
-    pch = strtok(registro,"|");							//pega o isbn
+    pch = strtok(registro,"|");										//pega o isbn
     
     if(!strcmp(pch, rem[cont_remocao].isbn)){			//compara o isbn do registro for igual com isbn passado
     	printf("posicao do registro a ser removido no arquivo: %d\n", posicao_corrente); //posicao do registro no arquivo
