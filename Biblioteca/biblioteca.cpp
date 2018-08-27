@@ -279,15 +279,17 @@ int dump_arquivo(FILE **arq){
  	
 	tam_reg = pega_registro(arq,registro);
 	while (tam_reg > 0){
-		printf("Tamanho registro: %d\n", tam_reg);
-    pch = strtok(registro,"|");
-    while (pch != NULL){
-    	printf("%s\n",pch);
-	    pch = strtok(NULL,"|");
-    }
+		//printf("\nTamanho registro: %d\n", tam_reg);
+		pch = strtok(registro,"|");
+		if(registro[0] != '*'){
+			while (pch != NULL){
+				printf("%s\n",pch);
+				pch = strtok(NULL,"|");
+			}
+		}
 		printf("\n");
-  	tam_reg = pega_registro(arq,registro);
-	} 
+	  	tam_reg = pega_registro(arq,registro);
+	}
 	printf("\n");
 	system("pause");
 	fclose(*arq);
@@ -304,11 +306,11 @@ int remover(FILE **arq){
 	
 	fseek(*arq,0,0);
  	fread(&cont_insercao, sizeof(int), 1, *arq);
-  fread(&cont_remocao, sizeof(int), 1, *arq);
+  	fread(&cont_remocao, sizeof(int), 1, *arq);
  	fread(&offset, sizeof(int), 1, *arq);
  	
  	printf("contador insercao: %d\n", cont_insercao);
-  printf("contador remocao: %d\n", cont_remocao);
+  	printf("contador remocao: %d\n", cont_remocao);
 	printf("offset: %d\n\n", offset);
 	
 	posicao_corrente = ftell(*arq); 								//pega posicao do primeiro registro
@@ -338,7 +340,7 @@ int remover(FILE **arq){
   	fwrite(&posicao, sizeof(int), 1, *arq);
   	printf("registro removido\n");
 	}else{
-		printf("regstro não encontrado\n");
+		printf("regstro nao encontrado\n");
 	}
 	
 	cont_remocao++;																//incrementa o contador de remoção
@@ -347,4 +349,5 @@ int remover(FILE **arq){
 	
 	system("pause");
 	fclose(*arq);
+	return 1;
 }
