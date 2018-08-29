@@ -1,5 +1,4 @@
 //Desenvolvedores: Bruno Domene e Thiago Polycarpo
-//acrescentar a biblioteca conio.h e os getch() pra ver o resultado
 
 //bibliotecas
 #include <stdlib.h> 
@@ -192,7 +191,7 @@ int inserir(FILE **arq){
 	printf("\nregistro na funcao inserir:  %s", registro);
 	printf("\ntamanho registro na funcao inserir: %d\n\n", tam_registro);
   
-  //Inserindo no meio do arquivo se tiver espaço disponivel com tamanho que caiba registro
+  //Inserindo no meio do arquivo se tiver espaço disponivel com tamanho que caiba o registro
 	if(offset != -1){
 		int proximo, tam_excluido, aux, achou = 0, anterior;
 		aux = offset;
@@ -200,11 +199,11 @@ int inserir(FILE **arq){
 	
 		//acha se possivel um espaço valido para o registro 
 		while(achou != 1 && proximo != -1){
-			fseek(*arq, aux, 0);
-			fread(&tam_excluido, sizeof(int), 1, *arq);
+			fseek(*arq, aux, 0);												//vai para o espaço disponivel
+			fread(&tam_excluido, sizeof(int), 1, *arq);	//lê o tamanho do espaço valido naquele espaço disponivel
 			printf("\ntamanho do resgistro excluido: %d", tam_excluido);
 			fseek(*arq, 1, 1);													//pula o marcador *
-			fread(&proximo, sizeof(int), 1, *arq);			//pega a posição do proximo registro na lista
+			fread(&proximo, sizeof(int), 1, *arq);			//pega a posição do proximo espaço livre na lista
 			printf("\nproximo elemento: %d\n", proximo);
 			
 			if(tam_excluido >= tam_registro){
