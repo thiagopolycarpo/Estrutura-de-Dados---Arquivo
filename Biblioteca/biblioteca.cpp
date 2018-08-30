@@ -282,6 +282,10 @@ int dump_arquivo(FILE **arq){
 		pch = strtok(registro,"|");
 		if(registro[0] != '*'){
 			while (pch != NULL){
+				//exibindo o hexadecimal de cada caracter
+				for(int i = 0; i < strlen(pch); i++)
+					printf("%X ", pch[i]);
+					
 				printf("%s\n",pch);
 				pch = strtok(NULL,"|");
 			}
