@@ -287,7 +287,7 @@ int dump_arquivo(FILE **arq){
 			}
 		}
 		printf("\n");
-	  	tam_reg = pega_registro(arq,registro);
+	  tam_reg = pega_registro(arq,registro);
 	}
 	printf("\n");
 	system("pause");
