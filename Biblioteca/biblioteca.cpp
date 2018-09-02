@@ -31,7 +31,6 @@ int inserir(FILE **arq, char nome_arq[]);
 int dump_arquivo(FILE **arq);
 int remover(FILE **arq);
 int compactar(FILE **arq);
-int renomear(char arq1[],char arq2[]);
 int deletar_arquivo(char arq[]);
 
 int main(){
@@ -110,7 +109,7 @@ void criar_arquivo(FILE **p_arq, char nome_arq[]){
   fwrite(&cont,sizeof(int),1,*p_arq);//cont do arquivo de inserÃ§Ã£o
   fwrite(&cont,sizeof(int),1,*p_arq);//cont do arquivo de remoÃ§Ã£o
   fwrite(&offset,sizeof(int),1,*p_arq);//offset
-  fechar_arquivo(p_arq);
+  fclose(*p_arq);
 }
 
 //carrega arquivo biblioteca.bin ou remove.bin  -- falta gerar a marcaÃ§Ã£o de registros usados ou nÃ£o
@@ -155,7 +154,7 @@ int carrega_arquivo(){
   fechar_arquivo(&arq);
   return 1;
 }
-//devolve o tamanho dos registros
+//devolve o tamanho dos registros e obtem o registro
 int pega_registro(FILE **p_arq, char *p_reg){
   int bytes;
      
@@ -166,11 +165,10 @@ int pega_registro(FILE **p_arq, char *p_reg){
 }
 
 int inserir(FILE **arq, char nome_arq[]){
-	int i, cont_registro, tam_registro, offset, tam_disponivel, aberto,ignora;
+	int i, cont_registro, tam_registro, offset, tam_disponivel, aberto;
 	char registro[119],  teste;
 	
 	system("cls");
-	
 	
   //abre arquivo e se nao conseguir abrir o arquivo porque Ã© a primeira vez, cria o arquivo
 	if((fopen(nome_arq, "r+b")) == NULL){
@@ -184,18 +182,18 @@ int inserir(FILE **arq, char nome_arq[]){
   //e le mais um byte que Ã© o offset do arquivo indicando arquivos deletados ou nao
   fseek(*arq,0,0);
   fread(&cont_registro,1,sizeof(int),*arq);
-  fread(&ignora,1,sizeof(int),*arq);//ignora cont do arquivo de remocao
-  printf("\ncontador: %d", cont_registro);
+  printf("contador: %d\n", cont_registro);
+  fseek(*arq,4,1); //pula o cont do arquivo de remoção 
   fread(&offset,1,sizeof(int),*arq);
-  printf("\noffset: %d", offset);
+  printf("offset: %d\n\n", offset);
   i=cont_registro;
   
   //formatando os registros para a estrategia de tamanho variavel a partir do i que voltou do arquivo
   sprintf(registro,"%s|%s|%s|%s|", lr[i].isbn, lr[i].titulo, lr[i].autor, lr[i].ano);
   tam_registro = strlen(registro); //pega o tamanho de cada registro
 	tam_registro++;
-	printf("\nregistro na funcao inserir:  %s", registro);
-	printf("\ntamanho registro na funcao inserir: %d\n\n", tam_registro);
+	printf("registro na funcao inserir:  %s\n", registro);
+	printf("tamanho registro na funcao inserir: %d\n\n", tam_registro);
   
   //Inserindo no meio do arquivo se tiver espaço disponivel com tamanho que caiba o registro
 	if(offset != -1){
@@ -207,10 +205,10 @@ int inserir(FILE **arq, char nome_arq[]){
 		while(achou != 1 && proximo != -1){
 			fseek(*arq, aux, 0);												//vai para o espaço disponivel
 			fread(&tam_excluido, sizeof(int), 1, *arq);	//lê o tamanho do espaço valido naquele espaço disponivel
-			printf("\ntamanho do resgistro excluido: %d", tam_excluido);
+			printf("tamanho do resgistro excluido: %d\n", tam_excluido);
 			fseek(*arq, 1, 1);													//pula o marcador *
 			fread(&proximo, sizeof(int), 1, *arq);			//pega a posição do proximo espaço livre na lista
-			printf("\nproximo elemento: %d\n", proximo);
+			printf("proximo elemento: %d\n", proximo);
 			
 			if(tam_excluido >= tam_registro){
 				achou = 1;
@@ -226,21 +224,18 @@ int inserir(FILE **arq, char nome_arq[]){
 		if(achou){			
 			fseek(*arq, aux + 4, 0);   //aponta para o espaço disponivel
 			
-			//fwrite(&tam_registro, sizeof(int), 1, *arq);     //insere o tamanho do registro
-			
 			fwrite(registro,sizeof(char),tam_registro, *arq); //insere o registro
 			
-			printf("\nregistro inserido\n");
+			printf("\nRegistro inserido\n");
 			i++;
 		  fseek(*arq,0,0);							//aponta para o contador
 		  fwrite(&i,sizeof(int),1,*arq);//grava no inicio no primeiro byte
 		  
 		  system("pause");
-		  fechar_arquivo(arq);
+		  fclose(*arq);
 		  return 1;
 		}else{
-			printf("\nnao foi possivel achar um tamanho disponivel, inserindo no final do arquivo\n");
-			system("pause");
+			printf("\nNao foi possivel achar um tamanho disponivel. Inserindo registro no final do arquivo\n");
 		}
 	}
 	
@@ -252,9 +247,9 @@ int inserir(FILE **arq, char nome_arq[]){
   fseek(*arq,0,0);							//aponta para o contador
   fwrite(&i,sizeof(int),1,*arq);//grava no inicio no primeiro byte
 
-  fechar_arquivo(arq);
   printf("\n\n");
   system("pause");
+  fechar_arquivo(arq);
   return 1;
 } 
 
@@ -274,7 +269,7 @@ int dump_arquivo(FILE **arq){
 
  	fseek(*arq,0,0);
  	fread(&cont_insercao, sizeof(int), 1, *arq);
-  	fread(&cont_remocao, sizeof(int), 1, *arq);
+  fread(&cont_remocao, sizeof(int), 1, *arq);
  	fread(&offset, sizeof(int), 1, *arq);
  	
  	printf("contador insercao: %d\n", cont_insercao);
@@ -284,24 +279,21 @@ int dump_arquivo(FILE **arq){
  	
 	tam_reg = pega_registro(arq,registro);
 	while (tam_reg > 0){
-		printf("\nTamanho registro: %d\n", tam_reg);
 		pch = strtok(registro,"|");
-		//if(registro[0] != '*'){
 			while (pch != NULL){
 				//exibindo o hexadecimal de cada caracter
-				//for(int i = 0; i < strlen(pch); i++)
-				//	printf("%X ", pch[i]);
+				for(int i = 0; i < strlen(pch); i++)
+					printf("%X ", pch[i]);
 					
-				printf("%s\n",pch);
+				printf("- %s\n",pch);
 				pch = strtok(NULL,"|");
 			}
-		//}
 		printf("\n");
 	  tam_reg = pega_registro(arq,registro);
 	}
 	printf("\n");
 	system("pause");
-	fechar_arquivo(arq);
+	fclose(*arq);
 	return 1;
 }
 
@@ -349,7 +341,7 @@ int remover(FILE **arq){
   	fwrite(&posicao, sizeof(int), 1, *arq);
   	printf("registro removido\n");
 	}else{
-		printf("regstro nao encontrado\n");
+		printf("registro %s nao encontrado\n", rem[cont_remocao]);
 	}
 	
 	cont_remocao++;																//incrementa o contador de remoção
@@ -361,30 +353,17 @@ int remover(FILE **arq){
 	return 1;
 }
 
-//renomeia arquivo
-int renomear(char arq1[], char arq2[]){
-	int ret;
-    
-    ret = rename(arq1, arq2);
-	
-   	if(ret == 0) {
-     	printf("\nRenomeado!!! ");
-   	}else{
-    	printf("\n Error: impossivel renomear!!");
-   	}
- 	return 1;
-}
 
 //deleta arquivo
 int deletar_arquivo(char arq[]){
 	int ret;
     
-    ret = remove(arq);;
+    ret = remove(arq);
 	
    	if(ret == 0) {
-     	printf("\nRenomeado!!! ");
+     	printf("\nRemovido!!! ");
    	}else{
-    	printf("\n Error: impossivel renomear!!");
+    	printf("\n Error: impossivel remover!!\n");
    	}
  	return 1;
 }
@@ -393,57 +372,71 @@ int deletar_arquivo(char arq[]){
 int compactar(FILE **arq){
 	FILE *arq_temporario;
 	char *pch, registro[119],arq_livros[]="livros.bin", arq_temp[]="temp.bin";
-	int aberto, criado, deletado, tam_reg, novo_tam_reg, cont_insercao, cont_remocao, offset;
+	int  tam_reg, novo_tam_reg, cont_insercao, cont_remocao, offset;
+	
 	system("cls");
 	
 	//abre biblioteca
- 	aberto = abrir_arquivo(arq, arq_livros);
-	if(!aberto){
+	if(!abrir_arquivo(arq, arq_livros)){
 		return 0;
 	}
+	
 	//cria arquivo temporario
 	criar_arquivo(&arq_temporario, arq_temp);
-	aberto = abrir_arquivo(&arq_temporario, arq_temp);
-	if(!aberto){
+	if(!abrir_arquivo(&arq_temporario, arq_temp)){
 		return 0;
 	}
 	
 	fseek(*arq,0,0);
 	fseek(arq_temporario,0,0);
 	fread(&cont_insercao, sizeof(int), 1, *arq);
-  	fread(&cont_remocao, sizeof(int), 1, *arq);
+  fread(&cont_remocao, sizeof(int), 1, *arq);
  	fread(&offset, sizeof(int), 1, *arq);
  	offset=-1;
  	fwrite(&cont_insercao,sizeof(int),1, arq_temporario);
  	fwrite(&cont_remocao,sizeof(int),1, arq_temporario);
  	fwrite(&offset,sizeof(int),1, arq_temporario);
 
-	
+	//copiando registros para o arquivo temporario
 	tam_reg = pega_registro(arq,registro);
 	while (tam_reg > 0){
-		printf("\nTamanho registro: %d\n", tam_reg);
 		if(registro[0] != '*'){
-			printf("\nesse eh o registro --> ");
-			puts(registro);
 			novo_tam_reg = strlen(registro);
-			printf("\nesse eh o tamanho do registro --> %d",novo_tam_reg);
+			novo_tam_reg++;
 			fwrite(&novo_tam_reg, sizeof(int), 1, arq_temporario);
 			fwrite(registro,sizeof(char),novo_tam_reg,arq_temporario);
 		}
-		printf("\n");
 	  tam_reg = pega_registro(arq,registro);
 	}
-	printf("\n");
-	fechar_arquivo(arq);
-	fechar_arquivo(&arq_temporario);
-
-	deletado = deletar_arquivo(arq_livros);
-
-	if(deletado){
-		renomear(arq_temp,arq_livros);
-	}else{
-	   printf("\nimpossivel renomear o arquivo\n");
+	
+	fclose(*arq);
+	
+	//Copiando os registros de volta para o arquivo
+	//abrindo o arquivo livros.bin no modo escrita
+	if((*arq = fopen(arq_livros, "wb")) == NULL){
+		printf("\nimpossivel abrir o arquivo\n");
+		system("pause");
+		return 0;
 	}
+	//escrevendo o cabeçalho com offeset = -1
+	fwrite(&cont_insercao,sizeof(int),1, *arq);
+ 	fwrite(&cont_remocao,sizeof(int),1, *arq);
+ 	fwrite(&offset,sizeof(int),1, *arq);
+ 	
+	fseek(arq_temporario, 12, 0);			//apontando para o primeiro registro do arquivo temporario
+	tam_reg = pega_registro(&arq_temporario, registro);
+	while(tam_reg > 0){
+		fwrite(&tam_reg, sizeof(int), 1, *arq);
+		fwrite(registro,sizeof(char),tam_reg, *arq);	
+		tam_reg = pega_registro(&arq_temporario, registro);
+	}
+	
+	fclose(arq_temporario);
+	fclose(*arq);
+	
+	printf("Arquivo compactado com sucesso\n");
+	deletar_arquivo(arq_temp); 
+		
 	system("pause");
 	return 1;
 }
