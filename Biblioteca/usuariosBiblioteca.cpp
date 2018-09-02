@@ -14,6 +14,8 @@ int main() {
                 {"3333333333333", "O Poder do Habito", "C. Duhigg", "2015"},
                 {"4444444444444", "A Culpa e das Estrelas", "G. John", "2015"},
                 {"5555555555555", "O Teorema de Katherine", "G. John", "2016"},
+                {"6666666666666", "Guerra dos Tronos", "G. R. Martin", "1996"},
+                {"7777777777777", "Mistborn vol2", "Brandon Sanderson", "2010"},
                };
        
     fd = fopen("biblioteca.bin", "w+b");
